@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
+import connectToMongoDB from "./db/connectToMongoDb.js";
 
 const app = express();
 
@@ -16,5 +17,6 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, () => {
+  connectToMongoDB();
   console.log(`server is running on port ${PORT}`);
 });

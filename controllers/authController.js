@@ -3,56 +3,62 @@ import bcryptjs from "bcryptjs";
 import User from "../models/User.js";
 import generateTokenAndSetCookie from "../Utils/generateToken.js";
 
-// Registration Validation and Logic
+// Custom Password Validator Function
+const passwordValidation = () => {
+  return body("password")
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters long")
+    .matches(/\d/)
+    .withMessage("Password must contain at least one number")
+    .matches(/[A-Z]/)
+    .withMessage("Password must contain at least one uppercase letter")
+    .matches(/[a-z]/)
+    .withMessage("Password must contain at least one lowercase letter")
+    .matches(/[@$!%*?&]/)
+    .withMessage("Password must contain at least one special character");
+};
+
+// Grouped Registration Validation
+const registerValidation = [
+  body("username")
+    .isLength({ min: 3 })
+    .trim()
+    .escape()
+    .withMessage("Username must be at least 3 characters long"),
+  body("fullName")
+    .notEmpty()
+    .trim()
+    .escape()
+    .withMessage("Full name is required"),
+  passwordValidation(),
+  body("dateOfBirth")
+    .isDate()
+    .withMessage("Please provide a valid Date of Birth"),
+  body("gender")
+    .isIn(["Male", "Female", "Other"])
+    .withMessage("Gender must be one of 'Male', 'Female', or 'Other'"),
+  body("country").notEmpty().trim().escape().withMessage("Country is required"),
+];
+
+// Grouped Login Validation
+const loginValidation = [
+  body("username")
+    .notEmpty()
+    .trim()
+    .escape()
+    .withMessage("Username is required"),
+  body("password")
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters long"),
+];
+
+// Register Route Logic
 export const register = async (req, res) => {
   try {
-    await body("username")
-      .isLength({ min: 3 })
-      .trim()
-      .escape()
-      .withMessage("Username must be at least 3 characters long")
-      .run(req);
-    await body("fullName")
-      .notEmpty()
-      .trim()
-      .escape()
-      .withMessage("Full name is required")
-      .run(req);
-    await body("password")
-      .isLength({ min: 6 })
-      .withMessage("Password must be at least 6 characters long")
-      .run(req);
-    await body("password")
-      .matches(/\d/)
-      .withMessage("Password must contain at least one number")
-      .run(req); // Password strength check
-    await body("password")
-      .matches(/[A-Z]/)
-      .withMessage("Password must contain at least one uppercase letter")
-      .run(req); // Password strength check
-    await body("password")
-      .matches(/[a-z]/)
-      .withMessage("Password must contain at least one lowercase letter")
-      .run(req); // Password strength check
-    await body("password")
-      .matches(/[@$!%*?&]/)
-      .withMessage("Password must contain at least one special character")
-      .run(req); // Password strength check
-    await body("dateOfBirth")
-      .isDate()
-      .withMessage("Please provide a valid Date of Birth")
-      .run(req);
-    await body("gender")
-      .isIn(["Male", "Female", "Other"])
-      .withMessage("Gender must be one of 'Male', 'Female', or 'Other'")
-      .run(req);
-    await body("country")
-      .notEmpty()
-      .trim()
-      .escape()
-      .withMessage("Country is required")
-      .run(req);
-
+    // Run Validation
+    await Promise.all(
+      registerValidation.map((validation) => validation.run(req))
+    );
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
@@ -98,20 +104,11 @@ export const register = async (req, res) => {
   }
 };
 
-// Login Validation and Logic
+// Login Route Logic
 export const login = async (req, res) => {
   try {
-    await body("username")
-      .notEmpty()
-      .trim()
-      .escape()
-      .withMessage("Username is required")
-      .run(req); // Validate username
-    await body("password")
-      .isLength({ min: 6 })
-      .withMessage("Password must be at least 6 characters long")
-      .run(req); // Validate password length
-
+    // Run Validation
+    await Promise.all(loginValidation.map((validation) => validation.run(req)));
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
